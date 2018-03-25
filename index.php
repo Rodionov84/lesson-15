@@ -3,6 +3,17 @@ include("connect.php");
 
 $action = isset($_GET["action"]) ? $_GET["action"] : "";
 
+if( isset($_GET["name"]) )
+{
+    $nameNewTable = $_GET["name"];
+    $newTable = $db->query("CREATE TABLE `$nameNewTable` (
+        id INT(11) NOT NULL AUTO_INCREMENT,
+        name VARCHAR(50),
+        author VARCHAR(50),
+        id_author INT(11) DEFAULT NULL, PRIMARY KEY (id)
+        );");
+}
+
 ?>
 <!doctype html>
 <html>
@@ -68,6 +79,7 @@ $action = isset($_GET["action"]) ? $_GET["action"] : "";
         $table = $_GET["table"];
         $field = $_GET["field"];
 
+
         $field_info = NULL;
 
         $table_info = $db->query("DESCRIBE " . $table);
@@ -100,7 +112,7 @@ $action = isset($_GET["action"]) ? $_GET["action"] : "";
                 $query = "ALTER TABLE `" . $table . "` CHANGE `" . $field . "` `" . $new_field . "` " . $type;
                 if( $type == "INT" || $type == "VARCHAR" )
                 {
-                    $query .= "(" . $size . ")";
+                    $query .= "(" . intval($size) . ")";
                 }
                 if( $type == "text" )
                 {
@@ -109,6 +121,9 @@ $action = isset($_GET["action"]) ? $_GET["action"] : "";
                 $query .= " NOT NULL";
 
                 $editStatus = $db->query($query);
+
+                //print_r($db->errorInfo());
+                //echo $query . "<br>";
 
                 echo $editStatus ? "Редактирование выполнено успешно. Перенаправление на страницу таблицы.<meta http-equiv=\"refresh\" content=\"3;URL=" . $_SERVER['SCRIPT_NAME']  . "?action=table&table=" . $table . "\" />" : "Ошибка при редактировании.";
             }
@@ -119,7 +134,7 @@ $action = isset($_GET["action"]) ? $_GET["action"] : "";
                 //print_r($field_info);
 
                 $matches = null;
-                $returnValue = preg_match('/^(INT|VARCHAR|TEXT|DATETIME){1}(\\((\\d{1,3})\\))?$/i', $field_info["Type"], $matches);
+                $returnValue = preg_match('/^(INT|VARCHAR|TEXT|DATETIME|tinyint|tinytext){1}(\\((\\d{1,3})\\))?$/i', $field_info["Type"], $matches);
                 //print_r($matches);
                 ?>
                 <form method="post">
@@ -127,7 +142,7 @@ $action = isset($_GET["action"]) ? $_GET["action"] : "";
                     <input type="text" name="field" value="<?php echo $field; ?>"><br>
                     <label for="type">Тип</label>
                     <select name="type">
-                        <option <?php echo ($matches[1] == "int") ? "selected" : ""; ?>
+                        <option <?php echo ($matches[1] == "int" || $matches[1] == "tinyint") ? "selected" : ""; ?>
                                 title="Целое число">
                             INT
                         </option>
@@ -135,7 +150,7 @@ $action = isset($_GET["action"]) ? $_GET["action"] : "";
                                 title="Строка переменной длины (0-65,535)">
                             VARCHAR
                         </option>
-                        <option <?php echo ($matches[1] == "text") ? "selected" : ""; ?>
+                        <option <?php echo ($matches[1] == "text" || $matches[1] == "tinytext") ? "selected" : ""; ?>
                                 title="Столбец типа TEXT">
                             TEXT
                         </option>
@@ -177,7 +192,11 @@ $action = isset($_GET["action"]) ? $_GET["action"] : "";
                 }
             ?>
             </tbody>
-        </table>
+        </table><br>
+        <form method="GET">
+            <input type="text" name="name" required placeholder="Название таблицы*"><br><br>
+            <input type="submit" name="create" value="Создать новую таблицу">
+        </form>
     <?php } ?>
     <a href="<?php echo $_SERVER['SCRIPT_NAME']; ?>">Список таблиц</a>
     </body>
